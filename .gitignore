@@ -1,0 +1,6 @@
+# Personal
+.env
+private/
+
+build/
+bin/
