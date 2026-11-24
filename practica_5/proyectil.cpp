@@ -25,9 +25,13 @@ void proyectil::lanzar(double x0, double y0, double anguloGrados, double velocid
 
 void proyectil::actualizarPaso(double dt, double gravedad) {
     if (!activo) return;
-    x += vx * dt;
-    y += vy * dt + 0.5 * gravedad * dt * dt;
+
+    const double arrastreVertical = 0.06;
     vy += gravedad * dt;
+    vy *= std::exp(-arrastreVertical * dt);
+
+    x += vx * dt;
+    y += vy * dt;
 }
 
 void proyectil::resolverColisionCaja(double minX, double maxX, double minY, double maxY) {
@@ -41,10 +45,16 @@ void proyectil::resolverColisionCaja(double minX, double maxX, double minY, doub
     }
     if (y - radio < minY) {
         y = minY + radio;
-        vy = -vy;
+        vy = std::abs(vy) * 0.65;
     } else if (y + radio > maxY) {
         y = maxY - radio;
-        vy = -vy;
+        if (std::abs(vy) < 10.0) {
+            vy = 0.0;
+        } else {
+            vy = -std::abs(vy) * 0.60;
+        }
+        vx *= 0.99;
+        if (std::abs(vx) < 8.0) vx = 0.0;
     }
 }
 double proyectil::resolverColisionObstaculo(obstaculos& obs, double factorConstante) {

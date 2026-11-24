@@ -7,6 +7,8 @@
 #include <QGraphicsEllipseItem>
 #include <QGraphicsRectItem>
 #include <QGraphicsTextItem>
+#include <QGraphicsPathItem>
+#include <QPainterPath>
 #include <QTimer>
 #include <QDoubleSpinBox>
 #include <QPushButton>
@@ -35,6 +37,7 @@ public:
 private slots:
     void onDispararClicked();
     void actualizarSimulacion();
+    void abrirSimuladorParticulas();
 
 private:
     struct BloqueVisual {
@@ -57,15 +60,19 @@ private:
     QDoubleSpinBox* spinAngulo = nullptr;
     QDoubleSpinBox* spinVelocidad = nullptr;
     QPushButton* btnDisparar = nullptr;
+    QPushButton* btnSimulacion = nullptr;
     QLabel* lblTurno = nullptr;
     QLabel* lblEstado = nullptr;
     QGraphicsEllipseItem* itemProyectil = nullptr;
+    QGraphicsPathItem* itemTrayectoria = nullptr;
+    QPainterPath trayectoria;
     proyectil bala;
     QVector<BloqueVisual> bloques;
     RivalVisual rivalJugador1;
     RivalVisual rivalJugador2;
     int turnoActual = 1;
     int pasosSinMovimiento = 0;
+    int tiempoTurnoMs = 0;
     const double cajaX = 20.0;
     const double cajaY = 20.0;
     const double cajaAncho = 860.0;
@@ -74,6 +81,7 @@ private:
     const double gravedad = 180.0;
     const double masaProyectil = 2.0;
     const double factorConstanteDano = 0.15;
+    const int duracionTurnoMs = 16000;
     void configurarInterfaz();
     void inicializarEscenario();
     void agregarBloque(double x, double y, double w, double h, double resistencia, double e);

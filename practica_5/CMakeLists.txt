@@ -17,15 +17,24 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        proyectil.h
+        proyectil.cpp
+        obstaculos.h
+        obstaculos.cpp
+        enemigos.h
+        enemigos.cpp
+        particula.h
+        particula.cpp
+        simuladorparticulas.h
+        simuladorparticulas.cpp
+        dialogosimulacion.h
+        dialogosimulacion.cpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(practica_5
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
-        proyectil.h proyectil.cpp
-        obstaculos.h obstaculos.cpp
-        enemigos.h enemigos.cpp
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET practica_5 APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "dialogosimulacion.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QBrush>
@@ -16,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     timer=new QTimer(this);
     connect(timer, &QTimer::timeout, this, &MainWindow::actualizarSimulacion);
     connect(btnDisparar, &QPushButton::clicked, this, &MainWindow::onDispararClicked);
+    connect(btnSimulacion, &QPushButton::clicked, this, &MainWindow::abrirSimuladorParticulas);
 }
 
 MainWindow::~MainWindow(){
@@ -39,7 +41,7 @@ void MainWindow::configurarInterfaz() {
     vista->setMinimumSize(900, 500);
 
     lblTurno = new QLabel("Turno: Jugador 1", central);
-    lblEstado = new QLabel("Configura ángulo y velocidad para lanzar.", central);
+    lblEstado = new QLabel("Jugador 1: ajusta ángulo y velocidad y pulsa Lanzar. Máximo 16 segundos por disparo.", central);
 
     spinAngulo = new QDoubleSpinBox(central);
     spinAngulo->setRange(-90.0, 180.0);
@@ -52,6 +54,7 @@ void MainWindow::configurarInterfaz() {
     spinVelocidad->setSuffix(" u/s");
 
     btnDisparar = new QPushButton("Lanzar Proyectil", central);
+    btnSimulacion = new QPushButton("Simulación de partículas", central);
 
     QHBoxLayout* barraControles = new QHBoxLayout();
     barraControles->addWidget(lblTurno);
@@ -60,6 +63,7 @@ void MainWindow::configurarInterfaz() {
     barraControles->addWidget(new QLabel("Velocidad:", central));
     barraControles->addWidget(spinVelocidad);
     barraControles->addWidget(btnDisparar);
+    barraControles->addWidget(btnSimulacion);
     barraControles->addWidget(lblEstado, 1);
 
     QVBoxLayout* layoutPrincipal = new QVBoxLayout(central);
@@ -86,6 +90,8 @@ void MainWindow::agregarBloque(double x, double y, double w, double h,
 
 void MainWindow::inicializarEscenario() {
     escena->clear();
+    itemTrayectoria = nullptr;
+    trayectoria = QPainterPath();
     bloques.clear();
 
     escena->addRect(cajaX, cajaY, cajaAncho, cajaAlto,QPen(Qt::black, 3), QBrush(Qt::white));
@@ -115,6 +121,7 @@ void MainWindow::inicializarEscenario() {
 
     turnoActual = 1;
     lblTurno->setText("Turno: Jugador 1 (Izquierda)");
+    btnDisparar->setText("Lanzar Jugador 1");
     btnDisparar->setEnabled(true);
 }
 
@@ -129,9 +136,17 @@ void MainWindow::onDispararClicked() {
     double anguloEfectivo = (turnoActual == 1) ? angulo : (180.0 - angulo);
 
     bala.lanzar(x0, y0, anguloEfectivo, velocidad, masaProyectil, 8.0);
+    if (itemTrayectoria) {
+        escena->removeItem(itemTrayectoria);
+        delete itemTrayectoria;
+    }
+    trayectoria = QPainterPath(QPointF(x0, y0));
+    itemTrayectoria = escena->addPath(trayectoria, QPen(QColor(170, 40, 40), 1, Qt::DashLine));
     itemProyectil->setVisible(true);
     btnDisparar->setEnabled(false);
+    btnDisparar->setText("Proyectil en vuelo...");
     pasosSinMovimiento = 0;
+    tiempoTurnoMs = 0;
     lblEstado->setText("Proyectil en vuelo...");
 
     timer->start(static_cast<int>(dt * 1000.0));
@@ -194,6 +209,11 @@ void MainWindow::actualizarSimulacion() {
         bala.Desactivar();
     }
 
+    tiempoTurnoMs += timer->interval();
+    if (tiempoTurnoMs >= duracionTurnoMs) {
+        bala.Desactivar();
+    }
+
     if (!bala.estaActivo()) {
         timer->stop();
         itemProyectil->setVisible(false);
@@ -208,12 +228,25 @@ void MainWindow::actualizarSimulacion() {
 void MainWindow::refrescarGraficos() {
     double r = bala.GETRadio();
     itemProyectil->setPos(bala.GETX() - r, bala.GETY() - r);
+    if (itemTrayectoria && bala.estaActivo()) {
+        trayectoria.lineTo(bala.GETX(), bala.GETY());
+        itemTrayectoria->setPath(trayectoria);
+    }
+}
+
+void MainWindow::abrirSimuladorParticulas() {
+    dialogosimulacion ventana(this);
+    ventana.exec();
 }
 
 void MainWindow::finalizarTurno() {
     turnoActual = (turnoActual == 1) ? 2 : 1;
     lblTurno->setText((turnoActual == 1) ? "Turno: Jugador 1 (Izquierda)": "Turno: Jugador 2 (Derecha)");
+    btnDisparar->setText((turnoActual == 1) ? "Lanzar Jugador 1" : "Lanzar Jugador 2");
     btnDisparar->setEnabled(true);
+    lblEstado->setText((turnoActual == 1)
+                           ? "Turno del Jugador 1: ajusta el disparo y pulsa Lanzar."
+                           : "Turno del Jugador 2: ajusta el disparo y pulsa Lanzar.");
 }
 
 void MainWindow::verificarWC() {
